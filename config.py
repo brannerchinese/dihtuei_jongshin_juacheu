@@ -4,16 +4,16 @@
 """Handle configuration and credentials."""
 
 import json
+import os
 
-class Configurations():
-    credentials_file = 'credentials.secret'
-    
+class Configurations():    
     def __init__(self):
+        credentials_file = 'credentials.secret'
+        config_file = 'config.secret'
+
         with open(credentials_file, 'r') as f:
             self.credentials = json.loads(f.read())
+
+        with open(config_file, 'r') as f:
+            self.config = json.loads(f.read())
     
-    def assign_credentials(self):
-        self.email = self.credentials['email']
-        self.password = self.credentials['password']
-        self.base_url = self.credentials['base_url']
-        self.paths = self.credentials['paths']
