@@ -17,8 +17,10 @@ config = configurations.config
 s = requests.Session()
 
 # Get login page.
-url = urlunparse((config['scheme'], config['base_url'], config['paths']['login'],
-                  '', '', ''))
+url = urlunparse(
+        (config['scheme'], config['base_url'], config['paths']['login'],
+        '', '', '')
+        )
 response = s.get(url)        # r.status_code = 200
 
 # Find form input fields and update with email and password.
@@ -29,14 +31,18 @@ input_fields.update({'email': credentials['email'],
                      'password': credentials['password']})
 
 # Post log-in data; special endpoint /sessions is used for this.
-url = urlunparse((config['scheme'], config['base_url'], 'sessions',
-                  '', '', ''))
+url = urlunparse(
+        (config['scheme'], config['base_url'], 'sessions',
+        '', '', '')
+        )
 r = s.post(url, data=input_fields)     # returns /private
 
 # Log into desired path
 for path in config['paths']:
-    url = urlunparse((config['scheme'], config['base_url'], config['paths'][path],
-                      '', '', ''))
+    url = urlunparse(
+        (config['scheme'], config['base_url'], config['paths'][path],
+        '', '', '')
+        )
     r = s.get(url, data=input_fields)      # returns "path" endpoint; see r.text
     print('\n{}\n{}'.format(url, r.status_code))
 
