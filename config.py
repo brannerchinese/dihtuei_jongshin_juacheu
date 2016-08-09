@@ -1,12 +1,12 @@
 # config.py
 # David Branner
 
-"""Handle configuration and credentials."""
+"""Handle configuration and credentials; we use JSON."""
 
 import json
 import os
 
-class Configurations():    
+class Configurations():
     def __init__(self):
         credentials_file = 'credentials.secret'
         config_file = 'config.secret'
