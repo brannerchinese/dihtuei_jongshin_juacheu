@@ -1,9 +1,13 @@
 # main.py
 # David Branner
 
-import requests
+import io
+import lxml
+import lxml.html
 import os
-from lxml import html
+import re
+import requests
+
 from urllib.parse import urlunparse
 
 import config
@@ -11,16 +15,18 @@ import config
 class Login():
     """Create and populate login object."""
     def __init__(self):
-        self.credentials = None
         self.config = None
-        self.session = None
+        self.credentials = None
         self.input_fields = None
+        self.parser = None
         self.private = None
+        self.session = None
 
         # Populate attributes
         self.configure()
         self.create_session()
         self.log_in()
+        self.make_parser()
 
     def configure(self):
         """Get config and credential data."""
@@ -43,7 +49,7 @@ class Login():
         response = self.session.get(url)        # r.status_code = 200
 
         # Find form's input fields and update with email and password.
-        root = html.document_fromstring(response.content)
+        root = lxml.html.document_fromstring(response.content)
         form = root.body.forms[0]
         self.input_fields = {item.name: item.value for item in form
                                         if item.tag == 'input'}
@@ -74,5 +80,30 @@ class Login():
         print('\nRequested {}\nResponse code: {}'.format(url, r.status_code))
         return r
 
-# works up to here.
+    def remove_random_length_comment(self, text):
+        """Remove length-hiding random comment"""
+        to_remove = "\n\n<!-- This is a random-length HTML comment: .+? -->$"
+        new_text = re.sub(to_remove, '', text)
+        print('\nLength-hiding random comment removed: {}.'.
+                format(len(text)>len(new_text)))
+        return new_text
 
+    def make_parser(self):
+        """Instiantiate parser"""
+        self.parser = lxml.etree.HTMLParser(recover=True)
+
+    def find_root(self, path):
+        fetched = self.fetch_path(path)
+        if fetched:
+            text = fetched.text
+        text = self.remove_random_length_comment(text)
+        self.root = lxml.etree.parse(io.StringIO(text), self.parser)
+
+# Next
+"""
+# Running manually:
+    import main
+    login = main.Login()
+    login.find_root('admissions')
+    list(login.root.iter())
+"""
