@@ -16,15 +16,18 @@ import config
 
 class Login():
     """Create and populate login object."""
-    def __init__(self):
+    def __init__(self, debug=True):
         self.config = None
         self.credentials = None
+        if debug == True:
+            self.debug = debug
+            print('\nDebugging on.')
         self.elements_to_remove = [
                 '//script',
                 "//meta[@name=\'csrf-token\']", # or just get rid of all meta?
                 "//link[@rel=\'stylesheet\']",
                 ]
-        self.html_text = None
+        self.html = None
         self.input_fields = None
         self.parser = None
         self.private = None
@@ -85,36 +88,45 @@ class Login():
             )
         # returns "path" endpoint; see r.text
         r = self.session.get(url, data=self.input_fields)
-        print('\nRequested {}\nResponse code: {}'.format(url, r.status_code))
+        self.debug_print('\nRequested {}\nResponse code: {}'.
+                format(url, r.status_code))
         return r
 
     def remove_random_length_comment(self, text):
-        """Remove length-hiding random comment.
+        """Remove length-hiding random comment. 
         
-        Apparently has to be removed from HTML text before lxml.etree.parse.
+        Unnecessary for self.root, with parser(remove_comments=true).
+        But still has to be removed from self.html manually.
         """
         to_remove = re.compile(
                 "\n*<!-- This is a random-length HTML comment: [a-z]+? -->")
         new_text = re.sub(to_remove, '', text)
-        print('\nLength-hiding random comment removed: {}.'.
+        self.debug_print('\nLength-hiding random comment removed: {}.'.
                 format(len(text)>len(new_text)))
         return new_text
 
     def make_parser(self):
         """Instantiate parser"""
-        self.parser = lxml.etree.HTMLParser(recover=True)
+        self.parser = lxml.etree.HTMLParser(
+                recover=True,
+                remove_comments=True,
+                no_network=True,
+                remove_blank_text=True)
 
     def find_root_and_text(self, path):
         """Find root of HTML as session.text, then clean."""
         fetched = self.fetch_path(path)
         if fetched:
             text = fetched.text
-        self.html_text = self.remove_random_length_comment(text)
-        self.root = lxml.etree.parse(io.StringIO(self.html_text), self.parser)
+        self.html = self.remove_random_length_comment(text)
+        self.root = lxml.etree.parse(io.StringIO(self.html), self.parser)
+        
+        # Clean
         before_removing = len(list(self.root.iter()))
         self.remove_undesirable_elements()
         after_removing = len(list(self.root.iter()))
-        print('\nRemoved {} elements'.format(before_removing-after_removing))
+        self.debug_print('\nRemoved {} elements'.
+                format(before_removing-after_removing))
 
     def remove_undesirable_elements(self):
         """If an 'undesirable' element is in document, remove and report."""
@@ -122,16 +134,22 @@ class Login():
             need_to_remove = any(item in self.root.iter()
                             for item in self.root.xpath(undesirable))
             if need_to_remove:
-                print('\nAny {} elements present?'.format(undesirable),
-                        need_to_remove
+                self.debug_print('\nAny {} elements present?'.
+                        format(undesirable), need_to_remove
                      )
                 for element in self.root.xpath(undesirable):
-                    print(' * acting now on {}'.format(element))
+                    self.debug_print(' * acting now on {}'.
+                            format(element))
                     element.getparent().remove(element)
-                print('All {} elements now removed?'.format(undesirable),
+                self.debug_print('All {} elements now removed?'.
+                        format(undesirable),
                         all(item not in self.root.iter()
                                 for item in self.root.xpath(undesirable))
                      )
+                     
+    def debug_print(self, *content):
+        if self.debug:
+            print(*content)
 
 def find_updates(path='manual'):
     """Get desired page; see if it has changed; if so, report and save."""
@@ -158,3 +176,9 @@ def find_updates(path='manual'):
 # Running manually:
 import main ; login = main.Login() ; login.find_root_and_text('manual')
 """
+
+# See lxml.de/1.3/parsing.html#parsing-html; http://lxml.de/1.3/xpathxslt.html
+
+# TODO: deal with class="media-block__image" on companies page
+
+# TODO: LXML tutorial urges use of root = etree.Element("root")
