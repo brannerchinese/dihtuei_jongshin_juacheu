@@ -2,6 +2,8 @@
 # David Branner
 
 import io
+import hashlib
+import json
 import lxml
 import lxml.html
 import os
@@ -17,6 +19,12 @@ class Login():
     def __init__(self):
         self.config = None
         self.credentials = None
+        self.elements_to_remove = [
+                '//script',
+                "//meta[@name=\'csrf-token\']", # or just get rid of all meta?
+                "//link[@rel=\'stylesheet\']",
+                ]
+        self.html_text = None
         self.input_fields = None
         self.parser = None
         self.private = None
@@ -81,29 +89,72 @@ class Login():
         return r
 
     def remove_random_length_comment(self, text):
-        """Remove length-hiding random comment"""
-        to_remove = "\n\n<!-- This is a random-length HTML comment: .+? -->$"
+        """Remove length-hiding random comment.
+        
+        Apparently has to be removed from HTML text before lxml.etree.parse.
+        """
+        to_remove = re.compile(
+                "\n*<!-- This is a random-length HTML comment: [a-z]+? -->")
         new_text = re.sub(to_remove, '', text)
         print('\nLength-hiding random comment removed: {}.'.
                 format(len(text)>len(new_text)))
         return new_text
 
     def make_parser(self):
-        """Instiantiate parser"""
+        """Instantiate parser"""
         self.parser = lxml.etree.HTMLParser(recover=True)
 
-    def find_root(self, path):
+    def find_root_and_text(self, path):
+        """Find root of HTML as session.text, then clean."""
         fetched = self.fetch_path(path)
         if fetched:
             text = fetched.text
-        text = self.remove_random_length_comment(text)
-        self.root = lxml.etree.parse(io.StringIO(text), self.parser)
+        self.html_text = self.remove_random_length_comment(text)
+        self.root = lxml.etree.parse(io.StringIO(self.html_text), self.parser)
+        before_removing = len(list(self.root.iter()))
+        self.remove_undesirable_elements()
+        after_removing = len(list(self.root.iter()))
+        print('\nRemoved {} elements'.format(before_removing-after_removing))
 
-# Next
+    def remove_undesirable_elements(self):
+        """If an 'undesirable' element is in document, remove and report."""
+        for undesirable in self.elements_to_remove:
+            need_to_remove = any(item in self.root.iter()
+                            for item in self.root.xpath(undesirable))
+            if need_to_remove:
+                print('\nAny {} elements present?'.format(undesirable),
+                        need_to_remove
+                     )
+                for element in self.root.xpath(undesirable):
+                    print(' * acting now on {}'.format(element))
+                    element.getparent().remove(element)
+                print('All {} elements now removed?'.format(undesirable),
+                        all(item not in self.root.iter()
+                                for item in self.root.xpath(undesirable))
+                     )
+
+def find_updates(path='manual'):
+    """Get desired page; see if it has changed; if so, report and save."""
+    hash_file = path + '.hash'
+    json_file = path + '.json'
+    login = Login()
+    login.find_root_and_text(path)
+
+    # Convert to list of strings and then to JSON.
+    list_of_strings = lxml.etree.tostringlist(login.root)
+    list_of_strings = [item.decode() for item in list_of_strings]
+    list_of_strings = json.dumps(list_of_strings)
+
+    # Save hash and, if changed, file.
+    # First check if we have files, and if so whether has has changed.
+    ### TODO: not yet finished here
+    hashed = hashlib.sha512(list_of_strings.encode()).hexdigest()
+    with open(hash_file, 'w') as f:
+        f.write(hashed)
+    with open(json_file, 'w') as f:
+        f.write(list_of_strings)
+
 """
 # Running manually:
-    import main
-    login = main.Login()
-    login.find_root('admissions')
-    list(login.root.iter())
+import main ; login = main.Login() ; login.find_root_and_text('manual')
 """
