@@ -11,12 +11,27 @@ Because of the use of frameworks, company names are present in the file received
 
  * **Selenium**. 
  
+   Simple test works:
+   
+   ```python
+   from selenium import webdriver
+   
+   browser = webdriver.Chrome()
+   browser.get('http://www.google.com')
+   print(browser.title)
+   browser.quit()
+   ```
+
+   although we haven't yet tried authentication on RC site.
+ 
    * **iframes**: ee http://stackoverflow.com/questions/37187068/unable-to-scrape-data-from-a-react-js-data-grid. 
    * The more serious question is how to do all this without opening a browser window. [This post](http://stackoverflow.com/a/28090850/621762) describe three options:
    
-     * with a headless browser like `PhantomJS`
+     * with a headless browser like `PhantomJS` or `ghost.py`
      * with a virtual display like `xvfb`
      * with a remote selenium server on some custom server like BrowserStack or Sauce Labs
+
+     The first two of these are discussed in their own READMEs.
 
  * **XPath**
  

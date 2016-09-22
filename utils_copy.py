@@ -17,16 +17,17 @@ import config
 
 class Login():
     """Create and populate login object."""
-    def __init__(self, debug=False):
+    def __init__(self, debug=False, endpoint=''):
         self.config = None
         self.credentials = None
-        self.debug = debug
+        self.debug_print = DebugPrinter(debug=debug).debug_print
         if debug:
             print('\nDebugging on.')
         self.html = None
         self.input_fields = None
         self.parser = None
         self.private = None
+        self.response = None
         self.session = None
         self.undesirables = [
                 '//script',
@@ -37,8 +38,12 @@ class Login():
         # Populate attributes
         self.configure()
         self.create_session()
+        fetched = None
+        while not self.response:
+            self.get_endpoint(endpoint)
+        self.html = self.response.text # TODO: Still needed?
+
         self.log_in()
-        self.make_parser()
 
     def configure(self):
         """Get config and credential data."""
@@ -54,12 +59,15 @@ class Login():
         """Get login page, find input fields, post login data."""
 
         # Get login page.
+        """
         url = urlunparse(
                 (self.config['scheme'], self.config['base_url'],
                     self.config['paths']['login'],
                 '', '', '')
                 )
         response = self.session.get(url)        # r.status_code = 200
+        """
+        self.get_endpoint(endpoint=self.config['paths']['login'])
 
         # Find form's input fields and update with email and password.
         root = lxml.html.document_fromstring(response.content)
@@ -77,9 +85,20 @@ class Login():
         # Initial log-in returns /private endpoint.
         self.private = self.session.post(url, data=self.input_fields)
 
-    def fetch_all_paths(self):
-        """Fetch all paths listed in config.secret."""
-        return [self.fetch_path(path) for path in self.config['paths']]
+
+#     def fetch_all_paths(self):
+#         """Fetch all paths listed in config.secret.
+#         
+#         TODO: Not currently in use.
+#         """
+#         return [self.fetch_path(path) for path in self.config['paths']]
+
+    def get_endpoint(self, endpoint=''):
+        url = urlunparse(
+                (self.config['scheme'], self.config['base_url'], endpoint,
+                '', '', '')
+                )
+        self.response.get(url)
 
     def fetch_path(self, path):
         """Log into desired path"""
@@ -89,28 +108,41 @@ class Login():
             '', '', '')
             )
         # returns "path" endpoint; see r.text
-        r = self.session.get(url, data=self.input_fields)
+        self.response = self.session.get(url, data=self.input_fields)
         self.debug_print('\nRequested {}\nResponse code: {}'.
-                format(url, r.status_code))
-        return r
+                format(url, self.response.status_code))
 
-    def make_parser(self):
-        """Instantiate parser"""
-        self.parser = lxml.etree.HTMLParser(
-                recover=True,
-                remove_comments=True, # important bec. of random-length comment
-                no_network=True,
-                remove_blank_text=True)
+class DebugPrinter():
+    def __init__(self, debug=False):
+        self.debug = debug
 
-    def find_root_and_text(self, path):
+    def debug_print(self, *content):
+        """Print statement that only prints if self.debug is True."""
+        if self.debug:
+            print(*content)
+
+
+class Cleaner():
+
+    def __init__(self, debug=False, endpoint=''):
+        self.debug_print = DebugPrinter(debug=debug).debug_print
+        self.parser = None
+        self.tree = None
+        self.undesirables = [
+                '//script',
+                "//meta[@name=\'csrf-token\']", # or just get rid of all meta?
+                "//link[@rel=\'stylesheet\']",
+                ]
+
+        self.make_parser()
+        self.find_root()
+        self.remove_undesirable_elements()
+
+    def find_root(self):
         """Find root of HTML as session.text, then clean."""
-        fetched = None
-        while not fetched:
-            fetched = self.fetch_path(path)
-        self.html = fetched.text
-        self.tree = lxml.etree.parse(io.StringIO(fetched.text), self.parser)
+        self.tree = lxml.etree.parse(io.StringIO(self.response.text), self.parser)
         
-        # Clean
+        # Clean.
         before_removing = len(list(self.tree.iter()))
         self.remove_undesirable_elements()
         after_removing = len(list(self.tree.iter()))
@@ -136,6 +168,14 @@ class Login():
                                 for item in self.tree.xpath(undesirable))
                      )
                      
+    def make_parser(self):
+        """Instantiate parser"""
+        self.parser = lxml.etree.HTMLParser(
+                recover=True,
+                remove_comments=True, # important bec. of random-length comment
+                no_network=True,
+                remove_blank_text=True)
+
     def debug_print(self, *content):
         """Print statement that only prints if self.debug is True."""
         if self.debug:
