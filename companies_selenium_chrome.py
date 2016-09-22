@@ -1,6 +1,58 @@
-#!/usr/bin/python
-# companies.py
-# David Branner
+"""
+import io
+import lxml
+import lxml.html
+from selenium import webdriver
+
+browser = webdriver.Chrome()
+# Get login page.
+url = 'https://www.recurse.com/login'
+browser.get(url)
+
+# Log in and receive /private
+e = 'dpb@brannerchinese.com'
+p = '70977097709770977097'
+email_form = browser.find_element_by_xpath("//input[@id='email']")
+pw_form = browser.find_element_by_xpath("//input[@id='password']")
+email_form.send_keys(e)
+pw_form.send_keys(p)
+browser.find_element_by_xpath("//input[@type='submit']").click()
+browser.save_screenshot('private.png')
+
+# Get companies page.
+url_companies = 'https://www.recurse.com/companies'
+browser.get(url_companies)
+browser.save_screenshot('companies.png')
+
+parser = lxml.etree.HTMLParser(
+                recover=True,
+                remove_comments=True, # important bec. of random-length comment
+                no_network=True,
+                remove_blank_text=True)
+tree = lxml.etree.parse(io.StringIO(browser.page_source), parser)
+undesirables = [
+                '//script',
+                "//meta[@name=\'csrf-token\']", # or just get rid of all meta?
+                "//link[@rel=\'stylesheet\']",
+                ]
+
+for undesirable in undesirables:
+    need_to_remove = any(item in tree.iter()
+                    for item in tree.xpath(undesirable))
+    if need_to_remove:
+        print('\nAny {} elements present?'.
+                format(undesirable), need_to_remove
+             )
+        for element in tree.xpath(undesirable):
+            print(' * acting now on {}'.
+                    format(element))
+            element.getparent().remove(element)
+        print('All {} elements now removed?'.
+                format(undesirable),
+                all(item not in tree.iter()
+                        for item in tree.xpath(undesirable))
+             )
+"""
 
 import datetime
 import hashlib
@@ -9,25 +61,23 @@ import lxml
 import os
 import re
 
-from utils import Login
+from utils_selenium_chrome import Login, Cleaner
 
 def get_all_companies(path='companies'):
-    """Collect list of companies and check if changed since last time."""
+    """Collect list of companies."""
+
     # Get all companies.
     print('\nInitiating log-in to site... ', end='', flush=True)
-    login = Login()
+    login = Login(debug=True, endpoint='companies')
     print('complete.\nCleaning response... ', end='', flush=True)
-    login.find_root_and_text(path)
+    tree = Cleaner(login.browser.page_source, debug=True).tree
     print('complete.')
+    login.browser.close() # In case of later error.
 
-    # Company names are present but apparently not in HTML;
-    # so recover using regex instead of LXML.
-    pattern = re.compile("""(?<=&quot;,&quot;name&quot;:&quot;)
-                            (.{1,40}?)           # Company name <= 40 chars.
-                            (?=&quot;,&quot;logo_url)""",
-                            re.VERBOSE)
-    return pattern.findall(login.html)
-
+    # Extract company names from <img alt...> values.
+    companies = tree.findall("//div[@class='media-block__image']/img")
+    return [dict(item.items())['alt'] for item in companies]
+    
 def report(date, old, new):
     """Report date and differences between sets "old" and "new"."""
     added = sorted(list(new-old))
@@ -52,7 +102,6 @@ def update_companies(path='companies'):
         os.makedirs(dir)
         print('\nNo directory *{} found; new directory created.'.format(dir))
     if os.path.exists(json_file):
-        print('\n{}\n'.format(json_file))
         with open(json_file, 'r') as f:
             old_json = json.load(f)
     else:
@@ -81,6 +130,7 @@ def update_companies(path='companies'):
     else:
         print('\nNo change found in list of companies since {}.\n'.
                 format(old_date))
+
 
 if __name__ == '__main__':
     update_companies()

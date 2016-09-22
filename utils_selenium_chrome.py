@@ -33,9 +33,7 @@ class Login():
         """Get config and credential data."""
         configurations = config.Configurations()
         self.credentials = configurations.credentials
-        self.debug_print(self.credentials) # qqq
         self.config = configurations.config
-        self.debug_print(self.config) # qqq
 
     def log_in(self):
         """Get login page, find input fields, post login data."""
@@ -59,11 +57,6 @@ class Login():
                 )
         self.browser.get(url)
 
-    def change_browsers(self):
-        """Transfer webdriver.PhantomJS cookies to webdriver.Chrome"""
-        self.browser.get_cookies()
-        pass
-
 
 class DebugPrinter():
     def __init__(self, debug=False):
@@ -77,8 +70,10 @@ class DebugPrinter():
 
 class Cleaner():
 
-    def __init__(self, browser, debug=False):
-        self.browser = browser
+    # TODO: in this class, we only need browser.page_source, not browser
+
+    def __init__(self, page_source, debug=False):
+        self.page_source = page_source
         self.debug_print = DebugPrinter(debug=debug).debug_print
         self.parser = None
         self.tree = None
@@ -93,10 +88,11 @@ class Cleaner():
         self.remove_undesirable_elements()
     
     def find_root(self):
+        """Find root of HTML as self.browser.page_source, then clean."""
         self.tree = lxml.etree.parse(
-                io.StringIO(self.browser.page_source), self.parser)
+                io.StringIO(self.page_source), self.parser)
 
-        # Clean
+        # Clean.
         before_removing = len(list(self.tree.iter()))
         self.remove_undesirable_elements()
         after_removing = len(list(self.tree.iter()))

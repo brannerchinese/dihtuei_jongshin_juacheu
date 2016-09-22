@@ -9,18 +9,18 @@ import lxml
 import os
 import re
 
-from utils import Login
+from utils_copy import Login, Cleaner
 
-def get_all_companies(path='companies'):
+def get_all_companies(endpoint='companies'):
     """Collect list of companies and check if changed since last time."""
     # Get all companies.
     print('\nInitiating log-in to site... ', end='', flush=True)
-    login = Login()
+    login = Login(debug=True)#, path='companies')
     print('complete.\nCleaning response... ', end='', flush=True)
-    login.find_root_and_text(path)
+    tree = Cleaner(debug=True, endpoint=endpoint).tree
     print('complete.')
 
-    # Company names are present but apparently not in HTML;
+    # Company names are present in data but apparently not in HTML;
     # so recover using regex instead of LXML.
     pattern = re.compile("""(?<=&quot;,&quot;name&quot;:&quot;)
                             (.{1,40}?)           # Company name <= 40 chars.
@@ -39,9 +39,9 @@ def report(date, old, new):
     if removed:
         print('\nCompanies removed since {}: \n\n * {}'.format(date, removed))
 
-def update_companies(path='companies'):
+def update_companies(endpoint='companies'):
     """Find current companies; check against saved list; update if needed."""
-    companies = get_all_companies(path)
+    companies = get_all_companies(endpoint)
 
     # Check against saved record.
     dir = 'last_saved_data'
