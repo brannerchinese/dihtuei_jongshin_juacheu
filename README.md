@@ -14,7 +14,7 @@ Kindly post issues, send me comments and suggestions, or offer pull requests.
 
  1. **Credentials and configuration**. Using `credentials.sample` and `config.sample` as models, populate `credentials.secret` and `config.secret`. These files are excluded from the repository via `.gitignore`, to keep private information private. Be sure to include a value for the "companies" key that shows the endpoint where RC companies are listed. If you're not sure what the endpoint is, visit the RC companies page manually — it's the last element of the path there. Let me know, please, if these directions have confused you.
 
- 1. **Running**. Run from the command line. This program runs in Python 3 and there is a `requirements` file for it. To set up Python:
+ 1. **Running**. Run from the command line. This program runs in Python 3 and there is a `requirements` file for it. To set up Python 3, assuming you have it installed:
 
     ```bash
     pyvenv v_env3
@@ -22,13 +22,15 @@ Kindly post issues, send me comments and suggestions, or offer pull requests.
     pip install -r requirements_py3.txt
     ```
 
-    Note that there are two separate versions of this code. The output to the terminal and persistence in a JSON file is the same regardless which version is used. Your options:
+    Note that there are two separate versions of the script. The output to the terminal and persistence in a JSON file is the same regardless which version is used. Your options:
 
     2. The slower but more resilient version uses Selenium and the `ChromeDriver` driver (which I have installed on Mac OS 10.9.5 using [Homebrew](http://brew.sh/)). See https://sites.google.com/a/chromium.org/chromedriver/getting-started on `chromedriver` generally. After `ChromeDriver` is installed, run as:
 
        ```bash
        python companies_selenium_chrome.py
        ```
+       
+       It temporarily opens an actual instance of Chrome, but does not transfer focus there.
 
     2. The faster but more brittle version uses an ordinary `HTTPS` request:
 
@@ -36,6 +38,6 @@ Kindly post issues, send me comments and suggestions, or offer pull requests.
        python companies.py
        ```
 
-       Because frameworks are used by the site, company names are present in the file received through a `requests.Session` request but apparently not in the DOM proper; so we in this case we recover them using regex on the file instead of using LXML on the DOM.
+       Because the RC site uses JS frameworks, company names are present in the file received through a `requests.Session` request but apparently not in the DOM proper as received; so we in this case we recover them using regex on the file instead of using LXML on the DOM.
 
 [end]
