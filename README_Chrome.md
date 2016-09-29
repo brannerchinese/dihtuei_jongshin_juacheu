@@ -34,6 +34,6 @@ Running with `webdriver.Chrome` requires installing ChromeDriver (done with Home
 
 ### Libraries for PhantomJS
 
-See `[phantompy](https://github.com/niwinz/phantompy) (docs herehttps://phantompy.readthedocs.io/en/latest/)`. (Not explored.)
+See `[phantompy](https://github.com/niwinz/phantompy)` (docs [here](https://phantompy.readthedocs.io/en/latest/)). (Not explored.)
 
 [end]

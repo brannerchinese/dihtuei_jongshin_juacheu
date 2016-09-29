@@ -20,7 +20,6 @@ Two different libraries are available from `pip3`: `xvfbwrapper` and `pyvirtuald
         browser = webdriver.Chrome()
         browser.get('http://www.google.com')
         print(browser.title)
-        browser.quit()
     ```
 
     runs correctly, although it does seem still to open the browser. See https://sites.google.com/a/chromium.org/chromedriver/getting-started on `chromedriver`.

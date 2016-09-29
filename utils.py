@@ -108,7 +108,7 @@ class Login():
         while not fetched:
             fetched = self.fetch_path(path)
         self.html = fetched.text
-        self.tree = lxml.etree.parse(io.StringIO(fetched.text), self.parser)
+        self.tree = lxml.etree.parse(io.StringIO(self.html), self.parser)
         
         # Clean
         before_removing = len(list(self.tree.iter()))

@@ -4,6 +4,7 @@
 
 import datetime
 import hashlib
+import html
 import json
 import lxml
 import os
@@ -42,6 +43,8 @@ def report(date, old, new):
 def update_companies(path='companies'):
     """Find current companies; check against saved list; update if needed."""
     companies = get_all_companies(path)
+    # Normalize HTML entities => ASCII.
+    companies = [html.unescape(item) for item in companies]
 
     # Check against saved record.
     dir = 'last_saved_data'

@@ -54,8 +54,13 @@ for undesirable in undesirables:
              )
 """
 
+#!/usr/bin/python
+# companies_selenium_chrome.py
+# David Branner
+
 import datetime
 import hashlib
+import html
 import json
 import lxml
 import os
@@ -68,9 +73,9 @@ def get_all_companies(path='companies'):
 
     # Get all companies.
     print('\nInitiating log-in to site... ', end='', flush=True)
-    login = Login(debug=True, endpoint='companies')
+    login = Login(debug=False, endpoint='companies')
     print('complete.\nCleaning response... ', end='', flush=True)
-    tree = Cleaner(login.browser.page_source, debug=True).tree
+    tree = Cleaner(login.browser.page_source, debug=False).tree
     print('complete.')
     login.browser.close() # In case of later error.
 
@@ -92,6 +97,8 @@ def report(date, old, new):
 def update_companies(path='companies'):
     """Find current companies; check against saved list; update if needed."""
     companies = get_all_companies(path)
+    # Normalize HTML entities => ASCII.
+    companies = [html.unescape(item) for item in companies]
 
     # Check against saved record.
     dir = 'last_saved_data'

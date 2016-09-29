@@ -1,5 +1,5 @@
 #!/usr/bin/python
-# selenium_authentication.py
+# utils_selenium_chrome.py
 # David Branner
 
 import io
