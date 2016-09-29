@@ -6,7 +6,7 @@ The JSON file is stored in a directory `last_saved_data`, so you can manually ar
 
 The first time you run the program, there are naturally no changes to report — changes await you, perhaps, the second time you run it. I suggest running it once every day or two if you're actively looking for work, or once every month or two if you're just interested in keeping track of RC's companies.
 
-The use case I have in mind is that when a few new companies have been added since the last time you looked, you can find those companies' names without having to read through the entire jobs site. My intention is to make it easier for each of us to keep track of this information, for and by ourselves, when we choose to do so. I don't think it would be appropriate to automate reporting of changes to the list — the point is for individual batchlings to be able to control their looking up of changes.
+The use case I have in mind is that when some new companies have been added (or old companies removed or put on hold) since the last time you looked, you can find those companies' names without having to read through the entire jobs site. I want it to be easy for each of us to keep track of this information, for and by ourselves, when we choose to do so. I don't think it would be appropriate to automate reporting of changes to the list — my goal is for individual batchlings to be able to control their own discovery of changes.
 
 Kindly post issues, send me comments and suggestions, or offer pull requests.
 
