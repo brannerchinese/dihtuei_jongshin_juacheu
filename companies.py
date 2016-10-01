@@ -20,14 +20,12 @@ def get_all_companies(path='companies'):
     print('complete.\nCleaning response... ', end='', flush=True)
     login.find_root_and_text(path)
     print('complete.')
-
-    # Company names are present but apparently not in HTML;
-    # so recover using regex instead of LXML.
-    pattern = re.compile("""(?<=&quot;,&quot;name&quot;:&quot;)
-                            (.{1,40}?)           # Company name <= 40 chars.
-                            (?=&quot;,&quot;logo_url)""",
-                            re.VERBOSE)
-    return pattern.findall(login.html)
+    
+    # Extract JSON string, convert and isolate company names
+    data_react_props = login.tree.xpath('//div[@data-react-props]')
+    json_object_str = data_react_props[0].values()[1]
+    json_object = json.loads(json_object_str)
+    return [company['name'] for company in json_object['companies']]
 
 def report(date, old, new):
     """Report date and differences between sets "old" and "new"."""

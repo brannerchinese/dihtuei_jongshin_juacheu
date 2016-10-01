@@ -38,6 +38,6 @@ Kindly post issues, send me comments and suggestions, or offer pull requests.
        python companies.py
        ```
 
-       Because the RC site uses JS frameworks, company names are present in the file received through a `requests.Session` request but apparently not in the DOM proper as received; so we in this case we recover them using regex on the file instead of using LXML on the DOM.
+       Because the RC site uses JS frameworks, company names are present in the file received through a `requests.Session` request but apparently not in the DOM proper as received. They are to be found in a stringified JSON object, which can be converted to a Python `dict` and the company names isolated.
 
 [end]
